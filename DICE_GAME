@@ -1,0 +1,131 @@
+##########YUAN CHEN##########
+Analysis
+
+x <- as.numeric(XXtotal$Dice1)
+set.seed(5)#set random seed to reproduce the result
+library(purrr)
+y <- rdunif(1002,0,5)#discrete uniform distribution
+y <- 2*y
+ks.test(x,y)#Kolmogorov-Smirnov Tests: whether comes from the same distribution
+
+#########Binomial Test#########
+with(XXtotal,table(Dice1))
+b.test.p <- function(x,y){
+  z <- length(which(x==y))
+  m <- length(x)
+  binom.test(z,m,1/6)#PAYOFFS(RMB)
+}
+b.test.p(gamelevel$Dice1,8)#Binomial Test PAYOFFS RMB8 
+b.test.p(gamelevel$Dice1,6)#PAYOFFS RMB6 
+b.test.p(gamelevel$Dice1,10)#PAYOFFS RMB10 
+
+
+##################Monastery######################
+Monastery <- XXtotal[which(XXtotal$whichchoice==2),]
+x <- as.numeric(Monastery$Dice1)
+y <- 2*rdunif(147,0,5)
+ks.test(x,y)
+with(Monastery,table(Dice1))
+b.test.p(temple$Dice1,8)#Binomial Test PAYOFFS RMB8 for those who chose monastery as recipient institution
+
+###################Whether Mosque is different from uniform distribution##################
+Mosque<- XXtotal[which(XXtotal$whichchoice==3),]
+x <- as.numeric(Mosque$Dice1)
+y <- 2*rdunif(116,0,5)
+ks.test(x,y)
+with(Mosque,table(Dice1))
+b.test.p(Mosque$Dice1,8)#Binomial Test PAYOFFS RMB8 for those who chose mosque as recipient institution
+
+
+#########################Kruskal test###############################
+kruskal.test(XXtotal$Dice1~XXtotal$whichchoice)#kruskal test. Will the payoffs distribution of different institutions be different?
+
+#########################################################################################
+#########################################################################################
+#########################################################################################
+####The distribution of money kept by the participants based on reported dice number.####
+#########################################################################################
+#########################################################################################
+#########################################################################################
+library(ggplot2)
+XXtotal$Choice1 <- as.factor(XXtotal$whichchoice)
+levels(XXtotal$Choice1)[levels(XXtotal$Choice1)=="1"] <-" Hope project"
+levels(XXtotal$Choice1)[levels(XXtotal$Choice1)=="2"] <-" Monastery"
+levels(XXtotal$Choice1)[levels(XXtotal$Choice1)=="3"] <-" Mosque"
+levels(XXtotal$Choice1)[levels(XXtotal$Choice1)=="4"] <-" Mother watercellar"
+p <- ggplot(XXtotal, aes(x=Dice1))+
+  facet_wrap(~Choice1,nrow=2)+
+  geom_histogram(aes(y=2*(..density..)),binwidth=2,fill="red",colour=I("black"))+theme(panel.background=element_blank(),axis.line=element_line(colour = "black"))+
+  geom_hline(yintercept = 1/6,colour="blue")+
+  xlab("Amount kept by the participants")+ylab("Frequency")+scale_x_continuous(breaks=seq(0,10,2))
+f_labels <- data.frame(Choice1=" Monastery",label="**")
+ft_labels <- data.frame(Choice1=" Mosque",label="**")
+p+geom_text(x=8,y=0.275,aes(label=label),data=ft_labels)+geom_text(x=8,y=0.26,aes(label=label),data=f_labels)
+
+###community-level data
+data1 <- with(XXtotal,table(Loc,Dice1))
+data1 <- as.data.frame(data1)
+final2 <- aggregate(XXtotal,by=list(she=XXtotal$Loc),mean,na.rm=T)
+final2[10,6] <- 0 #row=10,col=6 the community-size should be coded as zero.
+final2$gender <- final2$gender-1#ref=male
+
+final2$eight <- data1$Freq[69:85]
+data <- table(XXtotal$Loc)
+data<- as.data.frame(data)
+final2$eightC <- data$Freq
+final2$Four <- final2$eight/final2$eightC
+write.csv(final2,"final2.csv")
+
+##########################################################################################################
+############################################## Permutation test ##########################################
+##########################################################################################################
+##########################################################################################################
+#######Control model includes sex ratio + average level of education + average economic instability.######
+######################CS refers to community size, R refers to average religiosity.#######################
+#Model selection for private dice game decisions (predicting the community-level mean payoffs form 17 communities).
+######################################################################################################################
+######################################################################################################################
+library(MuMIn)
+library(lmPerm)
+# lists to store all models
+d.m.s <- list()
+# names of models
+m_names = c("Control", "Control + R","Control + CZ","Control + R+CS")
+
+d.m.s[[1]]<- lmp(Dice1 ~ gender +economicinstability+education
+                   , data = final2)
+d.m.s[[2]]<- lmp(Dice1 ~ gender +economicinstability+education+pca1_religiosity+pca2_religiosity+pca3_religiosity,data = final2)
+d.m.s[[3]]<- lmp(Dice1 ~ gender +economicinstability+education+communitysize,data = final2) 
+d.m.s[[4]]<- lmp(Dice1 ~ gender +economicinstability+education+communitysize+pca1_religiosity+pca2_religiosity+pca3_religiosity,data = final2) 
+
+best.ms<-model.sel(d.m.s)#mosel seletion
+best.ms$Model = m_names[ as.integer(rownames(best.ms))]  # add model names in correct order
+
+
+
+
+
+#########################################################################
+#####################Supplementary information#######################
+###########################################################################
+#Dice Quality Check
+Dice_Quality_Check <- read_excel("one/Dice Quality  Check.xlsx", 
+                                 +     sheet = "dice qual", col_types = c("blank", 
+                                                                          +         "numeric", "numeric", "numeric", 
+                                                                          +         "numeric", "numeric"))
+attach(Dice_Quality_Check)
+Dice1 <- with(Dice_Quality_Check,table(Dice1))
+chisq.test(Dice1)
+
+
+#multicollinearity test
+shapiro.test(final2$Dice1)
+control.m<- lm(Choice ~ gender +economicinstability+education,data=final2)
+attach(final2)
+plot(Choice~economicinstability,data=final2,xlab="Proportion of economic instability",ylab="Proportion of choosing religious institution")
+abline(lm(Choice ~ economicinstability,data=final2),col="lightgray")
+abline(lm(Choice ~ economicinstability + gender + education,coef=TRUE,data=final2))
+text(economicinstability,Choice,rownames(final2),cex=0.6,pos=4,col="red")
+summary(lm(Choice ~ economicinstability,data=final2))
+
+sqrt(vif(religiosity))>2##if true, multiconllinearity does exist.
