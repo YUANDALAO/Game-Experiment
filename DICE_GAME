@@ -1,9 +1,12 @@
 ##########YUAN CHEN##########
 Analysis
-
+#install.packages first
+library(lmPerm)
+library(MuMIn)
+library(purrr)
+library(ggplot2)
 x <- as.numeric(XXtotal$Dice1)
 set.seed(5)#set random seed to reproduce the result
-library(purrr)
 y <- rdunif(1002,0,5)#discrete uniform distribution
 y <- 2*y
 ks.test(x,y)#Kolmogorov-Smirnov Tests: whether comes from the same distribution
@@ -85,8 +88,6 @@ write.csv(final2,"final2.csv")
 #Model selection for private dice game decisions (predicting the community-level mean payoffs form 17 communities).
 ######################################################################################################################
 ######################################################################################################################
-library(MuMIn)
-library(lmPerm)
 # lists to store all models
 d.m.s <- list()
 # names of models
@@ -120,3 +121,15 @@ text(economicinstability,Choice,rownames(final2),cex=0.6,pos=4,col="red")
 summary(lm(Choice ~ economicinstability,data=final2))
 
 sqrt(vif(religiosity))>2##if true, multiconllinearity does exist.
+#compared to Justified dishonesty(*bending the rule*)
+ggplot(gamelevel, aes(x=Dice1,group=Loc))+
++     scale_y_continuous(breaks = seq(0,1,1/6),labels=c("0","1/6","2/6","3/6","4/6","5/6","1"))+
++     theme(panel.background=element_blank(),axis.line=element_line(colour = "black"))+
++     xlab("MoneyKeep In Dice")+ylab("Frequency")+stat_ecdf(pad=FALSE,geom="line",show.legend=TRUE,colour="red")+scale_x_continuous(breaks=seq(0,10,2),limits=c(0,10),labels=c(0,2,4,6,8,10))+
++     theme(legend.position=c(0.73,0.23),legend.title = element_text(size =10),legend.key = element_rect(fill="white"))+guides(colour=guide_legend(title="Location with",size=1))+
++     geom_hline(yintercept = 0,size=0.5,linetype="dashed")+geom_vline(xintercept =10,size=0.5,linetype="dashed")+
++     annotate("segment",x=0,xend =2,y=1/36,yend = 4/36,col="blue",linetype="dashed",size=2)+
++     annotate("segment",x=2,xend = 4,y=4/36,yend = 9/36,col="blue",linetype="dashed",size=2)+
++     annotate("segment",x=4,xend = 6,y=9/36,yend = 16/36,col="blue",linetype="dashed",size=2)+
++     annotate("segment",x=6,xend = 8,y=16/36,yend = 25/36,col="blue",linetype="dashed",size=2)+
++     annotate("segment",x=8,xend = 10,y=25/36,yend = 36/36,col="blue",linetype="dashed",size=2)
