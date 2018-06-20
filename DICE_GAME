@@ -108,15 +108,6 @@ best.ms$Model = m_names[ as.integer(rownames(best.ms))]  # add model names in co
 #########################################################################
 #####################Supplementary information#######################
 ###########################################################################
-#Dice Quality Check
-Dice_Quality_Check <- read_excel("one/Dice Quality  Check.xlsx", 
-                                 +     sheet = "dice qual", col_types = c("blank", 
-                                                                          +         "numeric", "numeric", "numeric", 
-                                                                          +         "numeric", "numeric"))
-attach(Dice_Quality_Check)
-Dice1 <- with(Dice_Quality_Check,table(Dice1))
-chisq.test(Dice1)
-
 
 #multicollinearity test
 shapiro.test(final2$Dice1)
